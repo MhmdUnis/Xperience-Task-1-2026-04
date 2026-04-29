@@ -1,35 +1,46 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import CreateEvent from "./pages/CreateEvent";
+import HostDashboard from "./pages/HostDashboard";
+import InviteePage from "./pages/InviteePage";
 
-function App() {
-  const [count, setCount] = useState(0)
+type Route =
+  | { name: "create" }
+  | { name: "host"; hostToken: string }
+  | { name: "invite"; inviteeToken: string };
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+function parseHash(): Route {
+  const h = window.location.hash.replace(/^#\/?/, "");
+  if (h.startsWith("host/")) {
+    return { name: "host", hostToken: h.substring("host/".length) };
+  }
+  if (h.startsWith("invite/")) {
+    return { name: "invite", inviteeToken: h.substring("invite/".length) };
+  }
+  return { name: "create" };
 }
 
-export default App
+export default function App() {
+  const [route, setRoute] = useState<Route>(parseHash());
+
+  useEffect(() => {
+    const onHash = () => setRoute(parseHash());
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
+  return (
+    <div className="container">
+      <header style={{ marginBottom: "1.5rem" }}>
+        <h1 style={{ fontSize: "1.4rem" }}>
+          <a href="#/" style={{ textDecoration: "none", color: "#1f2433" }}>
+            Event RSVP Manager
+          </a>
+        </h1>
+      </header>
+
+      {route.name === "create" && <CreateEvent />}
+      {route.name === "host" && <HostDashboard hostToken={route.hostToken} />}
+      {route.name === "invite" && <InviteePage inviteeToken={route.inviteeToken} />}
+    </div>
+  );
+}
